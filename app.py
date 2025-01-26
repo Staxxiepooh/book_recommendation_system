@@ -9,6 +9,14 @@ book_names = pickle.load(open('Recmodel/book_names.pkl', 'rb'))
 table_pivot = pickle.load(open('Recmodel/book_pivot.pkl', 'rb'))
 books = pickle.load(open('Recmodel/books.pkl', 'rb'))  # Assuming books DataFrame is available
 
+# Set a threshold for "enough data" (e.g., minimum number of books per genre)
+MIN_BOOKS_PER_GENRE = 5
+
+# Filter genres that have enough data (more than MIN_BOOKS_PER_GENRE books)
+genre_counts = books['categories'].value_counts()
+valid_genres = genre_counts[genre_counts >= MIN_BOOKS_PER_GENRE].index
+
+# Function to recommend books based on genre and liked books
 def recommend_books(user_genre, liked_books):
     books_list = []
     
@@ -34,15 +42,22 @@ def recommend_books(user_genre, liked_books):
 
     # Get the recommended books from the table_pivot index
     for i in range(len(suggestion[0])):
-        books_list.append(table_pivot.index[suggestion[0][i]])
+        book_title = table_pivot.index[suggestion[0][i]]
+        
+        # Check if the recommended book belongs to the selected genre
+        if books[books['title'] == book_title]['categories'].str.contains(user_genre, case=False, na=False).any():
+            books_list.append(book_title)
 
     return books_list
 
-# Streamlit select box to choose a genre
-selected_genre = st.selectbox("Select a genre", books['categories'].unique())
+# Streamlit select box to choose a genre (only valid genres)
+selected_genre = st.selectbox("Select a genre", valid_genres)
 
-# Streamlit multiselect box to select books
-selected_books = st.multiselect("Select books you liked", book_names)
+# Filter books based on selected genre
+filtered_books = books[books['categories'].str.contains(selected_genre, case=False, na=False)]
+
+# Streamlit multiselect box to select books within the selected genre
+selected_books = st.multiselect("Select books you liked", filtered_books['title'])
 
 # Button to trigger recommendation
 if st.button('Show Recommendation'):
