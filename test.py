@@ -57,8 +57,8 @@ def save_user_rating(user_id, book_title, rating):
     conn.close()
 
 # Function to recommend books
-def recommend_books(book_title, user_id, selected_genre, page_preference):
-    """Recommend books based on the selected book, user's ratings, genre, and page length."""
+def recommend_books(book_title, user_id, selected_genre):
+    """Recommend books based on the selected book, user's ratings, and genre."""
     if book_title not in table_pivot.index:
         return pd.DataFrame(columns=['title', 'thumbnail'])
 
@@ -67,13 +67,8 @@ def recommend_books(book_title, user_id, selected_genre, page_preference):
     suggestions = np.argsort(similarities)[::-1][1:15]
     recommended_books = [table_pivot.index[i] for i in suggestions]
 
-    # Filter by genre and page length
+    # Filter by genre
     genre_books = books[books['categories'] == selected_genre]
-    if page_preference == 'Short (≤ 300 pages)':
-        genre_books = genre_books[genre_books['num_pages'] <= 300]
-    else:
-        genre_books = genre_books[genre_books['num_pages'] > 300]
-    
     filtered_books = genre_books[genre_books['title'].isin(recommended_books)]
 
     if filtered_books.empty:
@@ -84,16 +79,25 @@ def recommend_books(book_title, user_id, selected_genre, page_preference):
     user_ratings = user_ratings[user_ratings['user_id'] == user_id]
 
     if not user_ratings.empty:
-        low_rated_books = user_ratings[user_ratings['rating'] <= 2]['book_title'].tolist()
-        liked_books = user_ratings[user_ratings['rating'] == 5]['book_title'].tolist()
-        
-        filtered_books = filtered_books[~filtered_books['title'].isin(low_rated_books)]
-        filtered_books = filtered_books[~filtered_books['title'].isin(liked_books)]
-        
-        filtered_books = filtered_books.sample(frac=1).head(6)
+        rated_books_list = user_ratings['book_title'].tolist()
 
+        # Remove books with low ratings (1 or 2)
+        low_rated_books = user_ratings[user_ratings['rating'] <= 2]['book_title'].tolist()
+        filtered_books = filtered_books[~filtered_books['title'].isin(low_rated_books)]
+
+        # Prioritize books with high ratings (4 or 5)
+        high_rated_books = user_ratings[user_ratings['rating'] >= 4]['book_title'].tolist()
+
+        # Combine high-rated books and new recommendations (without duplicates)
+        high_rated_books_df = books[books['title'].isin(high_rated_books)]
+        combined_books = pd.concat([high_rated_books_df, filtered_books]).drop_duplicates().reset_index(drop=True)
+
+        # Ensure diverse recommendations
+        filtered_books = combined_books.sample(frac=1).head(6)
+
+    # If still empty, suggest random books from the same genre
     if filtered_books.empty:
-        st.warning("No books matching the page length found. Recommending based on genre.")
+        st.warning("No more personalized recommendations! Showing random books from the same genre.")
         filtered_books = genre_books.sample(n=min(6, len(genre_books)))
 
     return filtered_books[['title', 'thumbnail']]
@@ -103,27 +107,17 @@ st.title("📚 Personalized Book Recommendation System")
 
 user_id = st.text_input("Enter your User ID:", value="User1")
 selected_genre = st.selectbox("Select a genre:", books['categories'].unique())
-page_preference = st.radio("Select your preferred book length:", ['Short (≤ 300 pages)', 'Long (> 300 pages)'])
-
-filtered_books = books[books['categories'] == selected_genre]
-if page_preference == 'Short (≤ 300 pages)':
-    filtered_books = filtered_books[filtered_books['num_pages'] <= 300]
-else:
-    filtered_books = filtered_books[filtered_books['num_pages'] > 300]
-
-selected_book = st.selectbox("Select a book you liked:", filtered_books['title'].unique())
-
-if selected_book:
-    save_user_rating(user_id, selected_book, 5)
+selected_book = st.selectbox("Select a book you liked:", books[books['categories'] == selected_genre]['title'].unique())
 
 if "recommended_books" not in st.session_state:
     st.session_state.recommended_books = pd.DataFrame(columns=['title', 'thumbnail'])
 
 if st.button("Get Recommendations"):
-    st.session_state.recommended_books = recommend_books(selected_book, user_id, selected_genre, page_preference)
+    st.session_state.recommended_books = recommend_books(selected_book, user_id, selected_genre)
 
 if not st.session_state.recommended_books.empty:
     st.subheader("📌 Recommended Books for You:")
+
     num_books = len(st.session_state.recommended_books)
     num_cols = min(6, num_books)  
     cols = st.columns(num_cols)
@@ -140,13 +134,16 @@ if not st.session_state.recommended_books.empty:
     if st.button("Submit Rating"):
         save_user_rating(user_id, selected_rated_book, rating)
         st.success(f"Your rating for '{selected_rated_book}' has been saved! 🎉")
-        st.session_state.recommended_books = recommend_books(selected_book, user_id, selected_genre, page_preference)
+
+        # Refresh recommendations after rating
+        st.session_state.recommended_books = recommend_books(selected_book, user_id, selected_genre)
         
         if not st.session_state.recommended_books.empty:
             st.subheader("🔄 Updated Recommendations:")
             num_books = len(st.session_state.recommended_books)
             num_cols = min(6, num_books)
             cols = st.columns(num_cols)
+
             for idx, (col, (_, row)) in enumerate(zip(cols, st.session_state.recommended_books.iterrows())):
                 with col:
                     st.image(row['thumbnail'], caption=row['title'], width=120)
