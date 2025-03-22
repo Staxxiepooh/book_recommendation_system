@@ -52,7 +52,7 @@ streamlit run app.py
 Then, open your browser and navigate to the provided local server URL to interact with the recommendation system.
 
 ## How It Works
-1. elect a Genre: Choose a book genre from the dropdown.
+1. Select a Genre: Choose a book genre from the dropdown.
 2. Pick Liked Book: Select books you enjoyed from the given list.
 3. Rate Books: Provide feedback on recommendations.
 4. Get Recommendations: Click the "Show Recommendation" button to generate a list of suggested books.
