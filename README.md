@@ -1,25 +1,31 @@
 # Book Recommendation System
 
 ## Overview
-This project is a Book Recommendation System that provides personalized book suggestions based on user preferences and historical data. The system uses collaborative filtering and content-based filtering techniques to recommend books that match users' reading tastes.
+This project is a Personalized Book Recommendation System that dynamically adjusts suggestions based on user preferences, historical data, and real-time feedback. The system employs collaborative filtering and cosine similarity to refine recommendations, incorporating user input for better personalization.
 
 ## Features
-- Personalized book recommendations
-- Uses collaborative and content-based filtering
-- Interactive web application for user interaction
-- Efficient data processing and recommendation logic
-- Genre-based filtering with minimum data threshold
-- Displays book covers along with recommendations
+- Personalized book recommendations based on user ratings and preferences.
+- Collaborative filtering for finding similar users and recommendations.
+- Cosine similarity-based model for content-based recommendations.
+- Dynamic feedback mechanism to refine suggestions over time.
+- Genre-based and page-length filtering for fine-tuned recommendations.
+- Interactive web application using Streamlit.
+- User rating storage in SQLite for tracking preferences.
+- Pre-trained model integration for efficient recommendation retrieval.
 
 ## Project Structure
 ```
-├── RecSystem.ipynb      # Jupyter Notebook for recommendation logic
-├── app.py               # Main application script
+├── RecSystem.ipynb      # Jupyter Notebook for model development
+├── app.py               # Streamlit application script
 ├── requirements.txt     # Required dependencies
 ├── setup.py             # Installation script
 ├── src/                 # Source code for the recommendation engine
-├── data2/               # Dataset containing book information
-├── Recmodel/            # Trained models for recommendations
+├── data/                # Dataset containing book information
+├── Recmodel/            # Pre-trained models for recommendations
+│   ├── cosine_sim.pkl   # Cosine similarity matrix
+│   ├── book_pivot.pkl   # Processed pivot table for ratings
+│   ├── books.pkl        # Book metadata
+├── user_ratings.csv     # Storage for user feedback and ratings
 ├── .gitignore           # Files and directories to be ignored by Git
 ├── README.md            # Project documentation
 ```
@@ -46,17 +52,18 @@ streamlit run app.py
 Then, open your browser and navigate to the provided local server URL to interact with the recommendation system.
 
 ## How It Works
-1. **Select a Genre**: Choose a book genre from the dropdown.
-2. **Pick Liked Books**: Select books you enjoyed from the given list.
-3. **Get Recommendations**: Click the "Show Recommendation" button to generate a list of suggested books based on your preferences.
-4. **View Book Covers**: The system displays book covers when available; otherwise, a placeholder image is shown.
+1. elect a Genre: Choose a book genre from the dropdown.
+2. Pick Liked Book: Select books you enjoyed from the given list.
+3. Rate Books: Provide feedback on recommendations.
+4. Get Recommendations: Click the "Show Recommendation" button to generate a list of suggested books.
+5. View Book Covers: Displays book covers when available; otherwise, a placeholder image is shown.
+6. Dynamic Updates: As you rate more books, future recommendations improve based on your inputs.
 
 ## Contribution
-Feel free to contribute to the project by submitting issues or pull requests. Ensure your contributions follow the project's coding standards and include proper documentation.
+Contributions are welcome! Submit issues or pull requests following the project's coding standards and documentation guidelines.
 
 ## License
 This project is licensed under the MIT License.
 
 ## Contact
 For any questions or contributions, contact the repository owner via GitHub.
-
